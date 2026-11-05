@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengumpulan Foto Siswa</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 450px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h2 { text-align: center; color: #2c3e50; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        .camera-box {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        input[type="file"] { display: none; }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+        .btn-danger { background-color: #e74c3c; }
+        .btn-success { background-color: #2ecc71; }
+        .btn:disabled { background-color: #95a5a6; }
+        #previewContainer {
+            text-align: center;
+            margin-bottom: 15px;
+            display: none;
+        }
+        #previewImg {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 2px dashed #cbd5e1;
+        }
+        #loading {
+            text-align: center;
+            display: none;
+            color: #e67e22;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Form Pengumpulan Foto Siswa</h2>
+    
+    <div class="form-group">
+        <label for="nama">Nama Lengkap Siswa:</label>
+        <input type="text" id="nama" placeholder="Contoh: Ahmad Rizki">
+    </div>
+
+    <div class="form-group">
+        <label for="kelas">Kelas:</label>
+        <input type="text" id="kelas" placeholder="Contoh: XII IPA 1">
+    </div>
+
+    <div class="camera-box">
+        <label for="cameraInput" class="btn" style="display:inline-block;">Buka Kamera / Ambil Foto</label>
+        <!-- Atribut capture="environment" atau "user" memaksa HP membuka kamera langsung -->
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="previewImage(event)">
+    </div>
+
+    <div id="previewContainer">
+        <label>Pratinjau Foto:</label>
+        <img id="previewImg" src="" alt="Preview">
+        <button class="btn btn-danger" onclick="hapusFoto()" style="margin-top: 10px;">Hapus / Ganti Foto</button>
+    </div>
+
+    <button id="uploadBtn" class="btn btn-success" onclick="uploadFoto()" disabled>Unggah ke Google Drive</button>
+    <div id="loading">Sedang mengunggah foto, mohon tunggu...</div>
+</div>
+
+<script>
+    const SCRIPT_URL = "MASUKKAN_WEB_APP_URL_ANDA_DISINI"; // Ganti dengan URL Web App Apps Script Anda
+    let base64Image = "";
+
+    function previewImage(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                base64Image = e.target.result;
+                document.getElementById('previewImg').src = base64Image;
+                document.getElementById('previewContainer').style.display = 'block';
+                document.getElementById('uploadBtn').disabled = false;
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function hapusFoto() {
+        base64Image = "";
+        document.getElementById('cameraInput').value = "";
+        document.getElementById('previewImg').src = "";
+        document.getElementById('previewContainer').style.display = 'none';
+        document.getElementById('uploadBtn').disabled = true;
+    }
+
+    function uploadFoto() {
+        const nama = document.getElementById('nama').value.trim();
+        const kelas = document.getElementById('kelas').value.trim();
+
+        if (!nama || !kelas) {
+            alert("Mohon isi Nama dan Kelas terlebih dahulu!");
+            return;
+        }
+
+        if (!base64Image) {
+            alert("Belum ada foto yang diambil!");
+            return;
+        }
+
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('uploadBtn').disabled = true;
+
+        const payload = {
+            nama: nama,
+            kelas: kelas,
+            image: base64Image
+        };
+
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Diperlukan untuk Google Apps Script Web App
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(() => {
+            document.getElementById('loading').style.display = 'none';
+            alert("Foto Berhasil Diunggah dan Tersimpan di Google Drive!");
+            location.reload(); // Reset halaman setelah berhasil
+        })
+        .catch(error => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('uploadBtn').disabled = false;
+            alert("Terjadi kesalahan: " + error);
+        });
+    }
+</script>
+
+</body>
+</html>
